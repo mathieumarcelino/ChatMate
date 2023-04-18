@@ -11,4 +11,4 @@
 
 
 ## Demo
-![](site/demo.gif)# ChatMate
+![](site/demo.gif)
