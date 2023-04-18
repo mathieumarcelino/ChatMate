@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>chatmate</title>
+  <link rel="stylesheet" href="site/styles.css">
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-logo">
+        <img class="menu-btn" id="settings-btn" src="site/menu.png" alt="logo">
+        <img class="logo-img" src="site/logo.png" alt="logo">
+    </div>
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <form id="settings-form">
+                <div class="modal-element">
+                    <label for="range1">Longueur: </label>
+                    <input type="range" id="range1" name="range1" min="40" max="200" step="1">
+                </div>
+                <div class="modal-element">
+                    <label for="range2">Créativité: </label>
+                    <input type="range" id="range2" name="range2" min="0" max="10" step="1">
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="chat-window">
+      <div class="message user-message">
+        <p>Engager la conversation</p>
+      </div>
+      <div class="message bot-message">
+        <p>Détail le type de rendez-vous que tu veux proposer à ton match, le reste je m’en charge !</p>
+      </div>
+    </div>
+    <form class="chat-input">
+      <input type="text" name="message" placeholder="Message..." required>
+      <button type="submit">Envoyer</button>
+    </form>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+    const chatInputForm = document.querySelector('.chat-input');
+    const chatWindow = document.querySelector('.chat-window');
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsModal = document.getElementById('settings-modal');
+    const settingsForm = document.getElementById('settings-form');
+    const range1 = document.getElementById('range1');
+    const range2 = document.getElementById('range2');
+
+    let menuOpen = false;
+    const menuBtnImg1 = 'site/menu.png';
+    const menuBtnImg2 = 'site/croix.png';
+
+    settingsBtn.addEventListener('click', function () {
+        if (!menuOpen) {
+            settingsBtn.src = menuBtnImg2;
+            settingsModal.style.display = 'flex';
+            menuOpen = true;
+        } else {
+            settingsBtn.src = menuBtnImg1;
+            settingsModal.style.display = 'none';
+            menuOpen = false;
+        }
+    });
+
+    function sendUserMessage(text) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', 'user-message');
+        messageElement.innerHTML = `<p>${text}</p>`;
+        chatWindow.appendChild(messageElement);
+    }
+
+    function sendBotMessage(text, isGif = false) {
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', 'bot-message');
+
+        if (isGif) {
+        messageElement.innerHTML = `<img class="bot-message-gif" src="${text}" alt="En attente de réponse...">`;
+        } else {
+        messageElement.innerHTML = `<p>${text}</p>`;
+        }
+
+        chatWindow.appendChild(messageElement);
+        return messageElement;
+    }
+
+    function updateBotMessage(messageElement, newText) {
+        messageElement.innerHTML = `<p>${newText}</p>`;
+    }
+
+    function convertValue(input) {
+        let val = [1.5, 1.4, 1.3, 1.2, 1.1, 1, 0.9, 0.8, 0.7, 0.6, 0.5];
+        return val[input];
+    }
+
+    async function fetchResponse(inputText) {
+        let longueur = range1.value;
+        let creativite = convertValue(range2.value);
+
+        console.log(`http://127.0.0.1:8280/jul/g/${encodeURIComponent(inputText)}/${encodeURIComponent(longueur)}/${encodeURIComponent(creativite)}`);
+
+        const waitingGifUrl = 'site/writing.gif';
+        const waitingMessage = sendBotMessage(waitingGifUrl, true);
+        const response = await fetch(`http://127.0.0.1:8280/jul/g/${encodeURIComponent(inputText)}/${encodeURIComponent(longueur)}/${encodeURIComponent(creativite)}`);
+        const text = await response.text();
+        updateBotMessage(waitingMessage, text.toLowerCase());
+    }
+
+    chatInputForm.addEventListener('submit', function (event) {
+        event.preventDefault();
+        const inputElement = chatInputForm.querySelector('input[name="message"]');
+        const inputText = inputElement.value;
+
+        if (inputText.trim()) {
+        sendUserMessage(inputText);
+        fetchResponse(inputText);
+        inputElement.value = '';
+        }
+    });
+    });
+  </script>
+</body>
+</html>
